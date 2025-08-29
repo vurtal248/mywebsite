@@ -1,0 +1,40 @@
+head {
+    font-style: normal;
+    font-family: Jetbrains Mono, monospace;
+
+    text-align: center,
+}
+
+body {
+    font-family: Jetbrains Mono, monospace;
+    border: 3px solid #000000;
+    border-radius: 20px;
+    padding: 20px;
+
+    text-align: center;
+    min-height: 100vh;
+}
+
+button {
+    font-family: Jetbrains Mono, monospace;
+}
+
+hr {
+    height: 3px;
+    background-color: black;
+    border: none;
+}
+
+ul {
+    display: table;
+    margin: 0 auto;
+}
+
+ol {
+    display: table;
+    margin: 0 auto;
+}
+
+.Paragraph1 {
+    font-size: 20px;
+}
