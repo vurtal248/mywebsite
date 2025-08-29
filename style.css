@@ -1,3 +1,26 @@
+
+@keyframes FadeSlideFromTop {
+    0% {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes Expand {
+    0% {
+        transform: scale(100%);
+    }
+
+    100% {
+        transform: scale(110%);
+    }
+}
+
 head {
     font-style: normal;
     font-family: Jetbrains Mono, monospace;
@@ -13,10 +36,18 @@ body {
 
     text-align: center;
     min-height: 100vh;
+
+    animation: FadeSlideFromTop 0.5s ease-in forwards;
 }
 
 button {
     font-family: Jetbrains Mono, monospace;
+
+    border-radius: 5px;
+}
+
+button:hover {
+    animation: Expand 0.1s ease-in forwards;
 }
 
 hr {
@@ -37,4 +68,13 @@ ol {
 
 .Paragraph1 {
     font-size: 20px;
+}
+
+.RobloxImage {
+    border: 10px solid #000000;
+    border-radius: 50px;
+}
+
+.RobloxImage:hover {
+    animation: Expand 0.1s ease-in forwards;
 }
