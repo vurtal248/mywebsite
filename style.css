@@ -1,80 +1,138 @@
-
-@keyframes FadeSlideFromTop {
+@keyframes fadeSlideFromTop {
     0% {
-        transform: translateY(-50px);
+        transform: translateY(-20px);
         opacity: 0;
     }
-
     100% {
         transform: translateY(0);
         opacity: 1;
     }
 }
 
-@keyframes Expand {
-    0% {
-        transform: scale(100%);
-    }
-
-    100% {
-        transform: scale(110%);
-    }
+@keyframes scaleHover {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
 }
 
-head {
-    font-style: normal;
-    font-family: Jetbrains Mono, monospace;
-
-    text-align: center,
+/* Reset and base styles */
+* {
+    box-sizing: border-box;
 }
 
 body {
-    font-family: Jetbrains Mono, monospace;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    color: white;
+    background-color: #000000;
     border: 3px solid #000000;
     border-radius: 20px;
     padding: 20px;
-
     text-align: center;
     min-height: 100vh;
-
-    animation: FadeSlideFromTop 0.5s ease-in forwards;
+    margin: 0;
+    animation: fadeSlideFromTop 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
 }
 
-button {
-    font-family: Jetbrains Mono, monospace;
-
-    border-radius: 5px;
+/* Layout */
+main {
+    max-width: 800px;
+    margin: 0 auto;
 }
 
-button:hover {
-    animation: Expand 0.1s ease-in forwards;
+header {
+    margin-bottom: 2rem;
 }
 
+section {
+    margin-bottom: 2rem;
+}
+
+/* Typography */
+h1 {
+    margin: 0 0 1rem 0;
+    font-size: 2.5rem;
+}
+
+.paragraph {
+    font-size: 1.25rem;
+    margin: 1rem 0;
+}
+
+/* Horizontal rule */
 hr {
     height: 3px;
-    background-color: black;
+    background-color: white;
     border: none;
+    margin: 1rem 0;
 }
 
-ul {
+/* Lists */
+ol, ul {
     display: table;
     margin: 0 auto;
+    text-align: left;
 }
 
-ol {
-    display: table;
-    margin: 0 auto;
+ol li, ul li {
+    margin: 0.5rem 0;
 }
 
-.Paragraph1 {
-    font-size: 20px;
+/* Button styles */
+.roblox-button {
+    font-family: inherit;
+    font-size: 1.1rem;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    color: #000000;
+    background-color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    transform: scale(1.2);
 }
 
-.RobloxImage {
-    border: 10px solid #000000;
-    border-radius: 50px;
+.roblox-button:hover {
+    background-color: #b9b9b9;
+    transform: scale(1.25);
 }
 
-.RobloxImage:hover {
-    animation: Expand 0.1s ease-in forwards;
+.roblox-button:active {
+    transform: scale(1.15);
+}
+
+/* Image styles */
+.roblox-image {
+    display: block;
+    margin: 2rem auto;
+    border-radius: 10px;
+    transition: transform 0.2s ease;
+}
+
+.roblox-image:hover {
+    transform: scale(1.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    body {
+        padding: 15px;
+        border-radius: 15px;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .paragraph {
+        font-size: 1.1rem;
+    }
+    
+    .roblox-button {
+        transform: scale(1);
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .roblox-button:hover {
+        transform: scale(1.05);
+    }
 }
