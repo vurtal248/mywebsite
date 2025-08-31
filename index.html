@@ -1,47 +1,49 @@
 <!DOCTYPE html>
-
-<html>
+<html lang="en">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width-device-width, intitial scale=1">
-
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="A website about Roblox gaming platform">
+        
         <link rel="stylesheet" href="style.css">
-        <title>
-           MyWebsite
-        </title>
+        <title>MyWebsite - Roblox Gaming</title>
     </head>
 
     <body>
-        <h1>
-            Welcome to My Website
-            <hr>
-        </h1>
+        <main>
+            <header>
+                <h1>Welcome to My Website</h1>
+                <hr>
+            </header>
 
-        <p class="Paragraph1">
-            I love <u><b><i>Roblox</i></b></u>
-        </p>
+            <section>
+                <p class="paragraph">
+                    I love <strong><em>Roblox</em></strong>
+                </p>
 
-        <p>
-            Why?
-        </p>
+                <p class="paragraph">
+                    <strong>Why?</strong>
+                </p>
 
-        <ol>
-            <li>Roblox is a great platform</li>
-            <br>
-            <li>It has a great Community!</li>
-        </ol>
+                <ol>
+                    <li>Roblox is a great platform</li>
+                    <li>It has a great Community!</li>
+                </ol>
+            </section>
 
-        <br>
-
-        <img  
-        class="RobloxImage"
-         src="https://archive.org/download/app-icon-roblox/app-icon-roblox.png" width="200px" height="200px">
-        
-        <br>
-        <br>
+            <section>
+                <img 
+                    class="roblox-image"
+                    src="https://archive.org/download/app-icon-roblox/app-icon-roblox.png" 
+                    alt="Roblox logo and icon"
+                    width="200" 
+                    height="200"
+                    loading="lazy">
+                
+                <button class="roblox-button" onclick="window.open('https://roblox.com','_blank')">
+                    <strong>Visit Roblox</strong>
+                </button>
+            </section>
+        </main>
     </body>
-    
-    <button onclick="window.open('https://roblox.com','_blank')">
-        <b>Press me for roblox</b>
-    </button>
 </html>
