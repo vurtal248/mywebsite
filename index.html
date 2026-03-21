@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="A love letter to Roblox — the platform that builds worlds.">
-  <title>MyWebsite</title>
+  <title>RBLX — My Universe</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -108,33 +108,15 @@
       z-index: 0;
     }
 
-    /* ── BackgroundPaths SVG container ──────────────────────────────────────
-       Two SVGs (position +1 and -1) absolutely fill the hero.
-       They sit above the RBLX ghost but below all content (z-index 1 vs 2). */
-    .bg-paths-layer {
+    /* ── Canvas background paths ─────────────────────────────────────
+       Canvas is a single GPU-composited bitmap layer.
+       will-change: transform keeps it on its own compositor layer. */
+    #bgCanvas {
       position: absolute; inset: 0;
-      pointer-events: none;
-      z-index: 1;
-    }
-    .bg-paths-svg {
       width: 100%; height: 100%;
-      /* Paths are drawn at very low opacity — the animation pulses them */
-      overflow: visible;
+      pointer-events: none; z-index: 1;
+      will-change: contents;
     }
-
-    /* ── BackgroundPaths CSS animations ─────────────────────────────────
-       flowPath: drives stroke-dashoffset using a CSS custom property set
-       once by JS. Runs entirely on the compositor — zero JS per frame.
-       pathPulse: opacity breathe, also compositor-only. */
-    @keyframes flowPath {
-      to { stroke-dashoffset: var(--path-len-neg); }
-    }
-    @keyframes pathPulse {
-      0%, 100% { opacity: var(--op-low);  }
-      50%       { opacity: var(--op-high); }
-    }
-    /* shape-rendering: optimizeSpeed skips sub-pixel AA on decorative paths */
-    .bg-paths-svg path { shape-rendering: optimizeSpeed; }
 
     /* ── Hero content layers sit above the paths ── */
     .hero-left {
@@ -389,11 +371,8 @@
 
     <section class="hero" aria-label="Hero — I love Roblox">
 
-      <!-- BackgroundPaths layer: two SVGs injected by JS below -->
-      <div class="bg-paths-layer" id="bgPathsLayer" aria-hidden="true">
-        <svg class="bg-paths-svg" id="bgSvgPos"  viewBox="0 0 696 316" fill="none" preserveAspectRatio="xMidYMid slice"></svg>
-        <svg class="bg-paths-svg" id="bgSvgNeg"  viewBox="0 0 696 316" fill="none" preserveAspectRatio="xMidYMid slice"></svg>
-      </div>
+      <!-- Single canvas replaces both SVGs — no DOM nodes per path -->
+      <canvas id="bgCanvas" aria-hidden="true"></canvas>
 
       <div class="hero-left">
         <p class="hero-eyebrow">Personal fan site · Est. 2024</p>
@@ -509,90 +488,155 @@
 
   <script>
     /* ═══════════════════════════════════════════════════════════════════
-       BackgroundPaths — CSS-animation-driven (no rAF loop)
+       BackgroundPaths — Canvas 2D renderer
 
-       Performance problem with the previous version:
-         setAttribute('stroke-dashoffset', value) was called on 72 paths
-         inside every requestAnimationFrame → ~4,320 DOM mutations/second,
-         all on the main thread, all triggering SVG style recalc.
+       Why Canvas instead of SVG:
+         stroke-dashoffset is a PAINT property, not a compositor property.
+         Even CSS @keyframes must repaint the SVG element every frame.
+         Canvas avoids this entirely — it's a single GPU bitmap. The rAF
+         loop calls clearRect + N bezierCurveTo/stroke calls, which maps
+         directly to a GPU texture blit with no DOM involvement at all.
 
-       Solution:
-         1. JS runs ONCE to call getTotalLength() and write two CSS custom
-            properties onto each path: --path-len-neg (the travel distance)
-            and the opacity bounds.
-         2. @keyframes flowPath animates stroke-dashoffset using that variable.
-         3. @keyframes pathPulse animates opacity.
-         Both keyframes run entirely on the CSS compositor — zero JS per frame.
-
-       Path count: 18 desktop / 10 mobile (matchMedia).
-       Visually identical to 36 at these stroke widths and opacities.
+       Architecture — why Canvas 2D + Path2D beats SVG for this effect:
+         1. SVG stroke-dashoffset is NEVER compositor-accelerated — it runs
+            the full SVG renderer on the main thread every frame regardless
+            of whether you use JS or CSS @keyframes.
+         2. Canvas 2D ctx.stroke(path2d) is a single GPU draw call with no
+            DOM, no style recalc, no layout invalidation.
+         3. Path2D objects are built ONCE and cached by the GPU driver.
+         4. ctx.lineDashOffset gives us the exact "travelling stroke" effect
+            at zero extra cost — it's a rasteriser hint, not geometry.
+         5. Page Visibility API pauses the loop when the tab is hidden.
     ═══════════════════════════════════════════════════════════════════ */
+    (() => {
+      const canvas    = document.getElementById('bgCanvas');
+      const ctx       = canvas.getContext('2d', { alpha: true });
+      const isMobile  = window.matchMedia('(max-width: 768px)').matches;
+      const COUNT     = isMobile ? 8 : 16; /* per position — 16 or 32 total */
+      const VIEW_W    = 696;
+      const VIEW_H    = 316;
 
-    const NS    = 'http://www.w3.org/2000/svg';
-    /* Reduce count on mobile to save GPU fill-rate */
-    const COUNT = window.matchMedia('(max-width: 768px)').matches ? 10 : 18;
+      /* Cached scale values — set once in resize(), read every frame.
+         NEVER call getBoundingClientRect() inside the draw loop. */
+      let cssW = 0, cssH = 0, scaleX = 1, scaleY = 1, dpr = 1;
 
-    function buildPathD(i, position) {
-      const p = position;
-      return [
-        `M-${380 - i * 5 * p} -${189 + i * 6}`,
-        `C-${380 - i * 5 * p} -${189 + i * 6}`,
-        `-${312 - i * 5 * p} ${216 - i * 6}`,
-        `${152 - i * 5 * p} ${343 - i * 6}`,
-        `C${616 - i * 5 * p} ${470 - i * 6}`,
-        `${684 - i * 5 * p} ${875 - i * 6}`,
-        `${684 - i * 5 * p} ${875 - i * 6}`
-      ].join(' ');
-    }
-
-    function buildFloatingPaths(svgEl, position) {
-      /* Phase 1 — build all path elements and append to DOM */
-      const pathEls = [];
-      for (let i = 0; i < COUNT; i++) {
-        const el = document.createElementNS(NS, 'path');
-        el.setAttribute('d', buildPathD(i, position));
-        el.setAttribute('stroke', 'white');
-        el.setAttribute('stroke-width', String(0.5 + i * 0.03));
-        el.setAttribute('fill', 'none');
-        svgEl.appendChild(el);
-        pathEls.push(el);
+      /* ── Approximate cubic bezier arc length via point sampling ──────────
+         We sample the curve at STEPS points and sum chord lengths.
+         This runs ONCE per path at build time — never during animation. */
+      function approxBezierLength(x0,y0, cx1,cy1, cx2,cy2, x1,y1, STEPS=60) {
+        let len = 0, px = x0, py = y0;
+        for (let s = 1; s <= STEPS; s++) {
+          const t  = s / STEPS;
+          const mt = 1 - t;
+          const x  = mt*mt*mt*x0 + 3*mt*mt*t*cx1 + 3*mt*t*t*cx2 + t*t*t*x1;
+          const y  = mt*mt*mt*y0 + 3*mt*mt*t*cy1 + 3*mt*t*t*cy2 + t*t*t*y1;
+          const dx = x - px, dy = y - py;
+          len += Math.sqrt(dx*dx + dy*dy);
+          px = x; py = y;
+        }
+        return len;
       }
 
-      /* Phase 2 — ONE rAF to read getTotalLength() after layout, then hand
-         off entirely to CSS. No further JS touches these elements. */
-      requestAnimationFrame(() => {
-        pathEls.forEach((el, i) => {
-          const len = el.getTotalLength();
-          if (!len || !isFinite(len)) return;
+      /* ── Build path objects + Path2D geometry ───────────────────────────
+         Path2D is constructed ONCE. After this the GPU owns the geometry. */
+      function makePath(i, position) {
+        const p   = position;
+        /* Bezier control points — identical formula to original component */
+        const x0  = -(380 - i * 5 * p),  y0  = -(189 + i * 6);
+        const cx1 = x0,                   cy1 = y0;
+        const cx2 = -(312 - i * 5 * p),  cy2 =   216 - i * 6;
+        const x1  =   152 - i * 5 * p,   y1  =   343 - i * 6;
+        const cx3 =   616 - i * 5 * p,   cy3 =   470 - i * 6;
+        const cx4 =   684 - i * 5 * p,   cy4 =   875 - i * 6;
+        const x2  =   684 - i * 5 * p,   y2  =   875 - i * 6;
 
-          const strokeOpacity = 0.1 + i * 0.03;
-          const opLow  = (strokeOpacity * 0.5).toFixed(3);
-          const opHigh = strokeOpacity.toFixed(3);
-          const dur    = (20 + Math.random() * 10).toFixed(1);
-          /* Negative delay starts the animation mid-cycle for instant visual */
-          const delay  = (-(Math.random() * parseFloat(dur))).toFixed(1);
+        /* Pre-bake the path into a Path2D object — GPU-cached geometry */
+        const path2d = new Path2D();
+        path2d.moveTo(x0, y0);
+        path2d.bezierCurveTo(cx1, cy1, cx2, cy2, x1, y1);
+        path2d.bezierCurveTo(cx3, cy3, cx4, cy4, x2, y2);
 
-          /* Write all values as CSS custom properties — the keyframes consume them */
-          el.style.setProperty('--path-len-neg', `-${len.toFixed(2)}px`);
-          el.style.setProperty('--op-low',  opLow);
-          el.style.setProperty('--op-high', opHigh);
+        /* Total arc length — sampled once, used to drive lineDashOffset */
+        const seg1len = approxBezierLength(x0,y0, cx1,cy1, cx2,cy2, x1,y1);
+        const seg2len = approxBezierLength(x1,y1, cx3,cy3, cx4,cy4, x2,y2);
+        const totalLen = seg1len + seg2len;
 
-          /* Set initial dasharray once — never touched again */
-          el.setAttribute('stroke-dasharray',  len.toFixed(2));
-          el.setAttribute('stroke-dashoffset', '0');
-          el.style.opacity = opLow;
+        const dur = 20 + Math.random() * 10; /* seconds */
+        return {
+          path2d,
+          totalLen,
+          lineWidth:   0.5 + i * 0.03,
+          baseOpacity: 0.1 + i * 0.03,
+          /* dashOffset travels 0 → totalLen over `dur` seconds */
+          offset:      Math.random() * totalLen,   /* random start position */
+          speed:       totalLen / (dur * 60),       /* px per frame at 60fps */
+          pulseOffset: Math.random() * Math.PI * 2,
+          pulsePeriod: dur * 60,
+        };
+      }
 
-          /* Both animations run on the CSS compositor — no JS per frame */
-          el.style.animation = [
-            `flowPath  ${dur}s ${delay}s linear     infinite`,
-            `pathPulse ${dur}s ${delay}s ease-in-out infinite`
-          ].join(', ');
+      const paths = [];
+      for (let i = 0; i < COUNT; i++) {
+        paths.push(makePath(i,  1));
+        paths.push(makePath(i, -1));
+      }
+
+      /* ── Resize — runs on mount + ResizeObserver, NEVER in draw loop ─── */
+      function resize() {
+        dpr    = Math.min(window.devicePixelRatio || 1, 2);
+        const rect  = canvas.getBoundingClientRect();
+        cssW   = rect.width;
+        cssH   = rect.height;
+        scaleX = cssW / VIEW_W;
+        scaleY = cssH / VIEW_H;
+        canvas.width  = cssW * dpr;
+        canvas.height = cssH * dpr;
+        /* Single scale applied once — all draw calls use viewBox coordinates */
+        ctx.setTransform(dpr * scaleX, 0, 0, dpr * scaleY, 0, 0);
+      }
+      resize();
+      new ResizeObserver(resize).observe(canvas);
+
+      /* ── Draw loop ────────────────────────────────────────────────────
+         Per frame cost: 1 clearRect + N × (setLineDash + stroke(Path2D))
+         Zero DOM reads, zero layout, zero style recalc. */
+      let frame = 0, rafId = null;
+
+      function draw() {
+        ctx.clearRect(0, 0, VIEW_W, VIEW_H); /* use viewBox coords — transform handles scale */
+
+        paths.forEach(path => {
+          path.offset = (path.offset + path.speed) % path.totalLen;
+
+          /* Opacity pulse — same sine wave as the original framer-motion opacity */
+          const pulse   = 0.5 + 0.5 * Math.sin(frame / path.pulsePeriod + path.pulseOffset);
+          const opacity = path.baseOpacity * (0.5 + 0.5 * pulse);
+
+          /* lineDashOffset: travelling stroke — single rasteriser hint, not geometry */
+          ctx.setLineDash([path.totalLen]);
+          ctx.lineDashOffset = -path.offset;
+
+          ctx.strokeStyle = `rgba(255,255,255,${opacity.toFixed(3)})`;
+          ctx.lineWidth   = path.lineWidth;
+          ctx.stroke(path.path2d); /* GPU-cached Path2D — one draw call */
         });
-      });
-    }
 
-    buildFloatingPaths(document.getElementById('bgSvgPos'),  1);
-    buildFloatingPaths(document.getElementById('bgSvgNeg'), -1);
+        frame++;
+        rafId = requestAnimationFrame(draw);
+      }
+
+      /* Pause when tab hidden — no wasted GPU cycles */
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          cancelAnimationFrame(rafId);
+        } else {
+          frame = 0;
+          rafId = requestAnimationFrame(draw);
+        }
+      });
+
+      rafId = requestAnimationFrame(draw);
+    })();
 
 
     /* ═══════════════════════════════════════════════════════════════════
