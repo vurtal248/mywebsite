@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="A love letter to Roblox — the platform that builds worlds.">
   <title>RBLX — My Universe</title>
- 
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
- 
+
   <style>
     :root {
       --bg:        #080808;
@@ -21,13 +21,15 @@
       --font-mono: 'JetBrains Mono', monospace;
       --ease:      cubic-bezier(0.16, 1, 0.3, 1);
     }
- 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    html { scrollbar-width: none;   }
 
-    html::-webkit-scrollbar { display: none; }
- 
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-behavior: smooth;
+      scrollbar-width: none; /* Firefox */
+    }
+    html::-webkit-scrollbar { display: none; } /* Chrome/Safari/Edge */
+
     body {
       font-family: var(--font-mono);
       background: var(--bg);
@@ -35,15 +37,19 @@
       min-height: 100vh;
       cursor: none;
       overflow-x: hidden;
+      scrollbar-width: none;
     }
- 
+    body::-webkit-scrollbar { display: none; }
+
+    /* ── Noise texture overlay ── */
     .noise-overlay {
       position: fixed; inset: 0;
       z-index: 9999; pointer-events: none; opacity: 0.038;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
       background-size: 200px 200px;
     }
- 
+
+    /* ── Custom cursor ── */
     .cursor-dot {
       position: fixed; width: 6px; height: 6px;
       background: var(--text); border-radius: 50%;
@@ -60,7 +66,8 @@
     body:has(a:hover, button:hover) .cursor-ring {
       width: 56px; height: 56px; border-color: rgba(255,255,255,0.55);
     }
- 
+
+    /* ── Nav ── */
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; justify-content: space-between; align-items: center;
@@ -80,27 +87,53 @@
       color: var(--muted); text-decoration: none; transition: color 0.2s;
     }
     .nav-links a:hover, .nav-links a:focus-visible { color: var(--text); outline: none; }
- 
+
+    /* ── Hero ── */
     .hero {
       min-height: 100vh;
       display: grid; grid-template-columns: 55% 45%;
       padding-top: 72px; position: relative; overflow: hidden;
     }
+
+    /* Ghost RBLX watermark — deepest layer */
     .hero::before {
       content: 'RBLX'; position: absolute;
       font-family: var(--font-head);
       font-size: clamp(180px,32vw,480px); font-weight: 800;
       color: transparent;
-      -webkit-text-stroke: 1px rgba(255,255,255,0.025);
+      -webkit-text-stroke: 1px rgba(255,255,255,0.018);
       letter-spacing: -0.04em;
       top: 50%; left: 50%; transform: translate(-50%,-50%);
       white-space: nowrap; pointer-events: none; user-select: none;
+      z-index: 0;
     }
- 
+
+    /* ── BackgroundPaths SVG container ──────────────────────────────────────
+       Two SVGs (position +1 and -1) absolutely fill the hero.
+       They sit above the RBLX ghost but below all content (z-index 1 vs 2). */
+    .bg-paths-layer {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .bg-paths-svg {
+      width: 100%; height: 100%;
+      /* Paths are drawn at very low opacity — the animation pulses them */
+      overflow: visible;
+    }
+
+    /* Per-path opacity pulse — mirrors framer-motion opacity:[0.3,0.6,0.3] */
+    @keyframes pathPulse {
+      0%, 100% { opacity: var(--op-low);  }
+      50%       { opacity: var(--op-high); }
+    }
+
+    /* ── Hero content layers sit above the paths ── */
     .hero-left {
       display: flex; flex-direction: column; justify-content: flex-end;
       padding: 4rem 3rem 5rem;
-      border-right: 1px solid var(--border); position: relative; z-index: 1;
+      border-right: 1px solid var(--border);
+      position: relative; z-index: 2;
     }
     .hero-eyebrow {
       font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase;
@@ -124,17 +157,16 @@
     .hero-stats { display: flex; gap: 3rem; }
     .stat-item { display: flex; flex-direction: column; gap: 0.3rem; }
     .stat-num {
-      font-family: var(--font-head); font-size: 2rem;
-      font-weight: 800; line-height: 1;
+      font-family: var(--font-head); font-size: 2rem; font-weight: 800; line-height: 1;
     }
     .stat-label {
       font-size: 0.62rem; letter-spacing: 0.15em;
       text-transform: uppercase; color: var(--muted);
     }
- 
+
     .hero-right {
       display: flex; flex-direction: column; justify-content: center;
-      padding: 4rem 3rem 5rem; position: relative; z-index: 1;
+      padding: 4rem 3rem 5rem; position: relative; z-index: 2;
     }
     .hero-image-wrap {
       position: relative; width: 180px; height: 180px; margin-bottom: 2.5rem;
@@ -166,7 +198,8 @@
       color: var(--muted); max-width: 380px;
     }
     .hero-desc strong { color: var(--text); font-weight: 600; }
- 
+
+    /* ── Marquee ── */
     .marquee-band {
       border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
       background: var(--surface); overflow: hidden; padding: 1.15rem 0;
@@ -188,10 +221,9 @@
       from { transform: translateX(0); }
       to   { transform: translateX(-50%); }
     }
- 
-    .reasons-section {
-      padding: 9rem 3rem; max-width: 1200px; margin: 0 auto;
-    }
+
+    /* ── Reasons ── */
+    .reasons-section { padding: 9rem 3rem; max-width: 1200px; margin: 0 auto; }
     .section-header {
       display: flex; align-items: flex-start; gap: 2.5rem; margin-bottom: 5rem;
     }
@@ -232,8 +264,7 @@
       font-weight: 700; margin-bottom: 0.85rem;
     }
     .reason-body {
-      font-size: 0.83rem; color: var(--muted);
-      line-height: 1.8; max-width: 38ch;
+      font-size: 0.83rem; color: var(--muted); line-height: 1.8; max-width: 38ch;
     }
     .reason-arrow {
       position: absolute; bottom: 2rem; right: 2rem;
@@ -247,7 +278,8 @@
       width: 13px; height: 13px; stroke: var(--accent);
       fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
     }
- 
+
+    /* ── CTA ── */
     .cta-section {
       padding: 9rem 3rem;
       display: flex; flex-direction: column; align-items: center; text-align: center;
@@ -267,10 +299,7 @@
       font-size: clamp(2.8rem,6vw,5.5rem); font-weight: 800;
       letter-spacing: -0.03em; line-height: 1; margin-bottom: 1.5rem;
     }
-    .cta-sub {
-      font-size: 0.88rem; color: var(--muted);
-      margin-bottom: 3.5rem; max-width: 36ch;
-    }
+    .cta-sub { font-size: 0.88rem; color: var(--muted); margin-bottom: 3.5rem; max-width: 36ch; }
     .btn-magnetic-wrap { display: inline-block; padding: 1.5rem; }
     .btn-visit {
       font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600;
@@ -280,7 +309,6 @@
       position: relative; overflow: hidden;
       display: inline-flex; align-items: center; gap: 0.75rem;
       transition: transform 0.45s var(--ease), box-shadow 0.45s var(--ease);
-      box-shadow: 0 0 0 rgba(255,255,255,0);
     }
     .btn-visit::before {
       content: ''; position: absolute; inset: 0;
@@ -295,31 +323,30 @@
       width: 13px; height: 13px; stroke: currentColor;
       fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0;
     }
- 
+
+    /* ── Footer ── */
     footer {
       border-top: 1px solid var(--border); padding: 1.75rem 3rem;
       display: flex; justify-content: space-between; align-items: center;
     }
     .footer-copy { font-size: 0.62rem; letter-spacing: 0.1em; color: var(--muted); }
-    .footer-wordmark {
-      font-family: var(--font-head); font-size: 0.82rem;
-      font-weight: 800; letter-spacing: 0.12em;
-    }
- 
+    .footer-wordmark { font-family: var(--font-head); font-size: 0.82rem; font-weight: 800; letter-spacing: 0.12em; }
+
+    /* ── Scroll reveal ── */
     .reveal {
       opacity: 0; transform: translateY(28px);
       transition: opacity 0.75s var(--ease), transform 0.75s var(--ease);
       transition-delay: var(--reveal-delay, 0s);
     }
     .reveal.visible { opacity: 1; transform: translateY(0); }
- 
+
+    /* ── Responsive ── */
     @media (max-width: 768px) {
       nav { padding: 1.2rem 1.5rem; }
       .nav-links { display: none; }
       .hero { grid-template-columns: 1fr; min-height: auto; }
       .hero-left { border-right: none; border-bottom: 1px solid var(--border); padding: 6rem 1.5rem 3rem; }
       .hero-right { padding: 3rem 1.5rem 4rem; }
-      .hero::before { font-size: 45vw; }
       .reasons-grid { grid-template-columns: 1fr; }
       .reasons-section { padding: 5rem 1.5rem; }
       .cta-section { padding: 5rem 1.5rem; }
@@ -337,11 +364,11 @@
   </style>
 </head>
 <body>
- 
+
   <div class="noise-overlay" aria-hidden="true"></div>
   <div class="cursor-dot"  id="cursorDot"  aria-hidden="true"></div>
   <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
- 
+
   <nav>
     <span class="nav-logo">RBLX</span>
     <ul class="nav-links">
@@ -349,10 +376,17 @@
       <li><a href="#cta">Visit</a></li>
     </ul>
   </nav>
- 
+
   <main>
- 
+
     <section class="hero" aria-label="Hero — I love Roblox">
+
+      <!-- BackgroundPaths layer: two SVGs injected by JS below -->
+      <div class="bg-paths-layer" id="bgPathsLayer" aria-hidden="true">
+        <svg class="bg-paths-svg" id="bgSvgPos"  viewBox="0 0 696 316" fill="none" preserveAspectRatio="xMidYMid slice"></svg>
+        <svg class="bg-paths-svg" id="bgSvgNeg"  viewBox="0 0 696 316" fill="none" preserveAspectRatio="xMidYMid slice"></svg>
+      </div>
+
       <div class="hero-left">
         <p class="hero-eyebrow">Personal fan site · Est. 2024</p>
         <h1 class="hero-h1">I<br>Love<br><em>Roblox</em></h1>
@@ -371,7 +405,7 @@
           </div>
         </div>
       </div>
- 
+
       <div class="hero-right">
         <div class="hero-image-wrap">
           <img
@@ -390,7 +424,7 @@
         </p>
       </div>
     </section>
- 
+
     <div class="marquee-band" aria-hidden="true">
       <div class="marquee-track">
         <span class="marquee-item"><span class="marquee-dot"></span>Platform</span>
@@ -409,7 +443,7 @@
         <span class="marquee-item"><span class="marquee-dot"></span>Exploration</span>
       </div>
     </div>
- 
+
     <section class="reasons-section" id="reasons" aria-label="Reasons to love Roblox">
       <div class="section-header reveal">
         <span class="section-label" aria-hidden="true">Reasons</span>
@@ -442,7 +476,7 @@
         </article>
       </div>
     </section>
- 
+
     <section class="cta-section reveal" id="cta" aria-label="Visit Roblox">
       <p class="cta-label">Ready to explore?</p>
       <h2 class="cta-title">Enter the<br>Universe</h2>
@@ -457,21 +491,122 @@
         </button>
       </div>
     </section>
- 
+
   </main>
- 
+
   <footer>
     <p class="footer-copy">Personal fan site · Not affiliated with Roblox Corporation</p>
     <span class="footer-wordmark">RBLX</span>
   </footer>
- 
+
   <script>
-    // ── Custom cursor: dot snaps instantly, ring lerps behind
+    /* ═══════════════════════════════════════════════════════════════════
+       BackgroundPaths — vanilla JS port of the 21st.dev framer-motion component
+       
+       Original approach:
+         - 36 cubic bezier paths per SVG (position +1 and -1)
+         - framer-motion: pathLength 0.3→1, pathOffset [0,1,0], opacity pulse
+       
+       Our approach (no dependencies):
+         - Generate the same path formulas in JS
+         - getTotalLength() to get the exact dash length
+         - stroke-dasharray = totalLength, stroke-dashoffset animates from 0 → -totalLength
+           creating the "flow" effect (equivalent to pathOffset [0,1,0])
+         - CSS @keyframes handles the opacity pulse per path
+         - requestAnimationFrame drives the dashoffset for ultra-smooth GPU animation
+    ═══════════════════════════════════════════════════════════════════ */
+
+    const NS = 'http://www.w3.org/2000/svg';
+    const COUNT = 36;
+
+    /* Build the d attribute string — identical formula to the React component */
+    function buildPathD(i, position) {
+      const p = position;
+      return [
+        `M-${380 - i * 5 * p} -${189 + i * 6}`,
+        `C-${380 - i * 5 * p} -${189 + i * 6}`,
+        `-${312 - i * 5 * p} ${216 - i * 6}`,
+        `${152 - i * 5 * p} ${343 - i * 6}`,
+        `C${616 - i * 5 * p} ${470 - i * 6}`,
+        `${684 - i * 5 * p} ${875 - i * 6}`,
+        `${684 - i * 5 * p} ${875 - i * 6}`
+      ].join(' ');
+    }
+
+    /* Populate one SVG element with 36 animated paths */
+    function buildFloatingPaths(svgEl, position) {
+      const paths = [];
+
+      for (let i = 0; i < COUNT; i++) {
+        const pathEl = document.createElementNS(NS, 'path');
+        pathEl.setAttribute('d', buildPathD(i, position));
+
+        /* Stroke opacity scaled by index — mirrors original strokeOpacity */
+        const strokeOpacity = 0.1 + i * 0.03;
+        pathEl.setAttribute('stroke', 'white');
+        pathEl.setAttribute('stroke-width', String(0.5 + i * 0.03));
+        pathEl.setAttribute('fill', 'none');
+
+        /* CSS custom props for the @keyframes opacity pulse */
+        const opLow  = (strokeOpacity * 0.5).toFixed(3);
+        const opHigh = (strokeOpacity).toFixed(3);
+        pathEl.style.setProperty('--op-low',  opLow);
+        pathEl.style.setProperty('--op-high', opHigh);
+
+        /* Random duration 20–30s, staggered delay so paths don't all sync */
+        const dur   = 20 + Math.random() * 10;
+        const delay = -(Math.random() * dur); /* negative delay = start mid-animation */
+        pathEl.style.animation = `pathPulse ${dur.toFixed(1)}s ${delay.toFixed(1)}s ease-in-out infinite`;
+        pathEl.style.opacity   = opLow;
+
+        svgEl.appendChild(pathEl);
+        paths.push({ el: pathEl, duration: dur * 1000, startTime: null });
+      }
+
+      /* After paths are in the DOM, getTotalLength() works.
+         We then drive dashoffset via rAF for the "flowing" effect. */
+      requestAnimationFrame(() => {
+        paths.forEach((p, i) => {
+          const len = p.el.getTotalLength();
+          if (!len || !isFinite(len)) return;
+
+          p.el.setAttribute('stroke-dasharray', len);
+          p.el.setAttribute('stroke-dashoffset', 0);
+
+          /* Stagger start times so paths don't all move together */
+          p.startTime = performance.now() - Math.random() * p.duration;
+        });
+
+        /* Single rAF loop drives ALL paths — one loop, not 72 */
+        function animateDash(now) {
+          paths.forEach(p => {
+            if (p.startTime === null) return;
+            const len = p.el.getTotalLength();
+            if (!len) return;
+
+            /* t goes 0 → 1 over the path's duration, then loops */
+            const t = ((now - p.startTime) % p.duration) / p.duration;
+            /* Negative offset scrolls the dash forward along the path */
+            p.el.setAttribute('stroke-dashoffset', (-len * t).toFixed(2));
+          });
+          requestAnimationFrame(animateDash);
+        }
+        requestAnimationFrame(animateDash);
+      });
+    }
+
+    buildFloatingPaths(document.getElementById('bgSvgPos'),  1);
+    buildFloatingPaths(document.getElementById('bgSvgNeg'), -1);
+
+
+    /* ═══════════════════════════════════════════════════════════════════
+       Custom cursor — dot snaps, ring lerps
+    ═══════════════════════════════════════════════════════════════════ */
     const dot  = document.getElementById('cursorDot');
     const ring = document.getElementById('cursorRing');
     let dotX = 0, dotY = 0, ringX = 0, ringY = 0;
     const LERP = 0.11;
- 
+
     document.addEventListener('mousemove', (e) => {
       dotX = e.clientX; dotY = e.clientY;
       dot.style.left = dotX + 'px';
@@ -484,21 +619,27 @@
       ring.style.top  = ringY + 'px';
       requestAnimationFrame(animateCursor);
     })();
-    document.addEventListener('mouseleave', () => { dot.style.opacity = '0'; ring.style.opacity = '0'; });
-    document.addEventListener('mouseenter', () => { dot.style.opacity = '1'; ring.style.opacity = '1'; });
- 
-    // ── IntersectionObserver scroll reveals
+    document.addEventListener('mouseleave', () => { dot.style.opacity='0'; ring.style.opacity='0'; });
+    document.addEventListener('mouseenter', () => { dot.style.opacity='1'; ring.style.opacity='1'; });
+
+
+    /* ═══════════════════════════════════════════════════════════════════
+       IntersectionObserver scroll reveals
+    ═══════════════════════════════════════════════════════════════════ */
     const revealObs = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          revealObs.unobserve(entry.target);
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          revealObs.unobserve(e.target);
         }
       });
     }, { threshold: 0.12 });
     document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
- 
-    // ── Magnetic button: translate toward cursor, spring back on leave
+
+
+    /* ═══════════════════════════════════════════════════════════════════
+       Magnetic button
+    ═══════════════════════════════════════════════════════════════════ */
     const wrap = document.getElementById('magneticWrap');
     const btn  = wrap?.querySelector('.btn-visit');
     if (wrap && btn) {
@@ -513,4 +654,3 @@
   </script>
 </body>
 </html>
- 
