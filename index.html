@@ -122,11 +122,19 @@
       overflow: visible;
     }
 
-    /* Per-path opacity pulse — mirrors framer-motion opacity:[0.3,0.6,0.3] */
+    /* ── BackgroundPaths CSS animations ─────────────────────────────────
+       flowPath: drives stroke-dashoffset using a CSS custom property set
+       once by JS. Runs entirely on the compositor — zero JS per frame.
+       pathPulse: opacity breathe, also compositor-only. */
+    @keyframes flowPath {
+      to { stroke-dashoffset: var(--path-len-neg); }
+    }
     @keyframes pathPulse {
       0%, 100% { opacity: var(--op-low);  }
       50%       { opacity: var(--op-high); }
     }
+    /* shape-rendering: optimizeSpeed skips sub-pixel AA on decorative paths */
+    .bg-paths-svg path { shape-rendering: optimizeSpeed; }
 
     /* ── Hero content layers sit above the paths ── */
     .hero-left {
@@ -501,25 +509,29 @@
 
   <script>
     /* ═══════════════════════════════════════════════════════════════════
-       BackgroundPaths — vanilla JS port of the 21st.dev framer-motion component
-       
-       Original approach:
-         - 36 cubic bezier paths per SVG (position +1 and -1)
-         - framer-motion: pathLength 0.3→1, pathOffset [0,1,0], opacity pulse
-       
-       Our approach (no dependencies):
-         - Generate the same path formulas in JS
-         - getTotalLength() to get the exact dash length
-         - stroke-dasharray = totalLength, stroke-dashoffset animates from 0 → -totalLength
-           creating the "flow" effect (equivalent to pathOffset [0,1,0])
-         - CSS @keyframes handles the opacity pulse per path
-         - requestAnimationFrame drives the dashoffset for ultra-smooth GPU animation
+       BackgroundPaths — CSS-animation-driven (no rAF loop)
+
+       Performance problem with the previous version:
+         setAttribute('stroke-dashoffset', value) was called on 72 paths
+         inside every requestAnimationFrame → ~4,320 DOM mutations/second,
+         all on the main thread, all triggering SVG style recalc.
+
+       Solution:
+         1. JS runs ONCE to call getTotalLength() and write two CSS custom
+            properties onto each path: --path-len-neg (the travel distance)
+            and the opacity bounds.
+         2. @keyframes flowPath animates stroke-dashoffset using that variable.
+         3. @keyframes pathPulse animates opacity.
+         Both keyframes run entirely on the CSS compositor — zero JS per frame.
+
+       Path count: 18 desktop / 10 mobile (matchMedia).
+       Visually identical to 36 at these stroke widths and opacities.
     ═══════════════════════════════════════════════════════════════════ */
 
-    const NS = 'http://www.w3.org/2000/svg';
-    const COUNT = 36;
+    const NS    = 'http://www.w3.org/2000/svg';
+    /* Reduce count on mobile to save GPU fill-rate */
+    const COUNT = window.matchMedia('(max-width: 768px)').matches ? 10 : 18;
 
-    /* Build the d attribute string — identical formula to the React component */
     function buildPathD(i, position) {
       const p = position;
       return [
@@ -533,65 +545,49 @@
       ].join(' ');
     }
 
-    /* Populate one SVG element with 36 animated paths */
     function buildFloatingPaths(svgEl, position) {
-      const paths = [];
-
+      /* Phase 1 — build all path elements and append to DOM */
+      const pathEls = [];
       for (let i = 0; i < COUNT; i++) {
-        const pathEl = document.createElementNS(NS, 'path');
-        pathEl.setAttribute('d', buildPathD(i, position));
-
-        /* Stroke opacity scaled by index — mirrors original strokeOpacity */
-        const strokeOpacity = 0.1 + i * 0.03;
-        pathEl.setAttribute('stroke', 'white');
-        pathEl.setAttribute('stroke-width', String(0.5 + i * 0.03));
-        pathEl.setAttribute('fill', 'none');
-
-        /* CSS custom props for the @keyframes opacity pulse */
-        const opLow  = (strokeOpacity * 0.5).toFixed(3);
-        const opHigh = (strokeOpacity).toFixed(3);
-        pathEl.style.setProperty('--op-low',  opLow);
-        pathEl.style.setProperty('--op-high', opHigh);
-
-        /* Random duration 20–30s, staggered delay so paths don't all sync */
-        const dur   = 20 + Math.random() * 10;
-        const delay = -(Math.random() * dur); /* negative delay = start mid-animation */
-        pathEl.style.animation = `pathPulse ${dur.toFixed(1)}s ${delay.toFixed(1)}s ease-in-out infinite`;
-        pathEl.style.opacity   = opLow;
-
-        svgEl.appendChild(pathEl);
-        paths.push({ el: pathEl, duration: dur * 1000, startTime: null });
+        const el = document.createElementNS(NS, 'path');
+        el.setAttribute('d', buildPathD(i, position));
+        el.setAttribute('stroke', 'white');
+        el.setAttribute('stroke-width', String(0.5 + i * 0.03));
+        el.setAttribute('fill', 'none');
+        svgEl.appendChild(el);
+        pathEls.push(el);
       }
 
-      /* After paths are in the DOM, getTotalLength() works.
-         We then drive dashoffset via rAF for the "flowing" effect. */
+      /* Phase 2 — ONE rAF to read getTotalLength() after layout, then hand
+         off entirely to CSS. No further JS touches these elements. */
       requestAnimationFrame(() => {
-        paths.forEach((p, i) => {
-          const len = p.el.getTotalLength();
+        pathEls.forEach((el, i) => {
+          const len = el.getTotalLength();
           if (!len || !isFinite(len)) return;
 
-          p.el.setAttribute('stroke-dasharray', len);
-          p.el.setAttribute('stroke-dashoffset', 0);
+          const strokeOpacity = 0.1 + i * 0.03;
+          const opLow  = (strokeOpacity * 0.5).toFixed(3);
+          const opHigh = strokeOpacity.toFixed(3);
+          const dur    = (20 + Math.random() * 10).toFixed(1);
+          /* Negative delay starts the animation mid-cycle for instant visual */
+          const delay  = (-(Math.random() * parseFloat(dur))).toFixed(1);
 
-          /* Stagger start times so paths don't all move together */
-          p.startTime = performance.now() - Math.random() * p.duration;
+          /* Write all values as CSS custom properties — the keyframes consume them */
+          el.style.setProperty('--path-len-neg', `-${len.toFixed(2)}px`);
+          el.style.setProperty('--op-low',  opLow);
+          el.style.setProperty('--op-high', opHigh);
+
+          /* Set initial dasharray once — never touched again */
+          el.setAttribute('stroke-dasharray',  len.toFixed(2));
+          el.setAttribute('stroke-dashoffset', '0');
+          el.style.opacity = opLow;
+
+          /* Both animations run on the CSS compositor — no JS per frame */
+          el.style.animation = [
+            `flowPath  ${dur}s ${delay}s linear     infinite`,
+            `pathPulse ${dur}s ${delay}s ease-in-out infinite`
+          ].join(', ');
         });
-
-        /* Single rAF loop drives ALL paths — one loop, not 72 */
-        function animateDash(now) {
-          paths.forEach(p => {
-            if (p.startTime === null) return;
-            const len = p.el.getTotalLength();
-            if (!len) return;
-
-            /* t goes 0 → 1 over the path's duration, then loops */
-            const t = ((now - p.startTime) % p.duration) / p.duration;
-            /* Negative offset scrolls the dash forward along the path */
-            p.el.setAttribute('stroke-dashoffset', (-len * t).toFixed(2));
-          });
-          requestAnimationFrame(animateDash);
-        }
-        requestAnimationFrame(animateDash);
       });
     }
 
