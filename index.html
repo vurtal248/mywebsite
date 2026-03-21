@@ -1,49 +1,513 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="A website about Roblox gaming platform">
-        
-        <link rel="stylesheet" href="style.css">
-        <title>MyWebsite</title>
-    </head>
-
-    <body>
-        <main>
-            <header>
-                <h1>Welcome to My Website</h1>
-                <hr>
-            </header>
-
-            <section>
-                <p class="paragraph">
-                    I love <strong><em>Roblox</em></strong>
-                </p>
-
-                <p class="paragraph">
-                    <strong>Why?</strong>
-                </p>
-
-                <ol>
-                    <li>Roblox is a great platform</li>
-                    <li>It has a great Community!</li>
-                </ol>
-            </section>
-
-            <section>
-                <img 
-                    class="roblox-image"
-                    src="https://archive.org/download/app-icon-roblox/app-icon-roblox.png" 
-                    alt="Roblox logo and icon"
-                    width="200" 
-                    height="200"
-                    loading="lazy">
-                
-                <button class="roblox-button" onclick="window.open('https://roblox.com','_blank')">
-                    <strong>Visit Roblox</strong>
-                </button>
-            </section>
-        </main>
-    </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A love letter to Roblox — the platform that builds worlds.">
+  <title>RBLX — My Universe</title>
+ 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+ 
+  <style>
+    :root {
+      --bg:        #080808;
+      --surface:   #111111;
+      --border:    rgba(255,255,255,0.08);
+      --accent:    #c8c8c8;
+      --text:      #f0f0f0;
+      --muted:     rgba(240,240,240,0.42);
+      --font-head: 'Syne', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --ease:      cubic-bezier(0.16, 1, 0.3, 1);
+    }
+ 
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+ 
+    body {
+      font-family: var(--font-mono);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      cursor: none;
+      overflow-x: hidden;
+    }
+ 
+    .noise-overlay {
+      position: fixed; inset: 0;
+      z-index: 9999; pointer-events: none; opacity: 0.038;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+ 
+    .cursor-dot {
+      position: fixed; width: 6px; height: 6px;
+      background: var(--text); border-radius: 50%;
+      pointer-events: none; z-index: 10000;
+      transform: translate(-50%,-50%); transition: opacity 0.2s;
+    }
+    .cursor-ring {
+      position: fixed; width: 36px; height: 36px;
+      border: 1px solid rgba(255,255,255,0.35); border-radius: 50%;
+      pointer-events: none; z-index: 9998;
+      transform: translate(-50%,-50%);
+      transition: width 0.3s var(--ease), height 0.3s var(--ease), border-color 0.3s;
+    }
+    body:has(a:hover, button:hover) .cursor-ring {
+      width: 56px; height: 56px; border-color: rgba(255,255,255,0.55);
+    }
+ 
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.4rem 3rem;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      background: rgba(8,8,8,0.72);
+    }
+    .nav-logo {
+      font-family: var(--font-head); font-size: 0.95rem;
+      font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    }
+    .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+    .nav-links a {
+      font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none; transition: color 0.2s;
+    }
+    .nav-links a:hover, .nav-links a:focus-visible { color: var(--text); outline: none; }
+ 
+    .hero {
+      min-height: 100vh;
+      display: grid; grid-template-columns: 55% 45%;
+      padding-top: 72px; position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: 'RBLX'; position: absolute;
+      font-family: var(--font-head);
+      font-size: clamp(180px,32vw,480px); font-weight: 800;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(255,255,255,0.025);
+      letter-spacing: -0.04em;
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+      white-space: nowrap; pointer-events: none; user-select: none;
+    }
+ 
+    .hero-left {
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 4rem 3rem 5rem;
+      border-right: 1px solid var(--border); position: relative; z-index: 1;
+    }
+    .hero-eyebrow {
+      font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 1.75rem;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .hero-eyebrow::before {
+      content: ''; display: inline-block;
+      width: 28px; height: 1px; background: var(--accent); flex-shrink: 0;
+    }
+    .hero-h1 {
+      font-family: var(--font-head);
+      font-size: clamp(3.5rem,7.5vw,7.5rem); font-weight: 800;
+      line-height: 0.93; letter-spacing: -0.03em;
+      text-transform: uppercase; margin-bottom: 3.5rem;
+    }
+    .hero-h1 em {
+      font-style: normal;
+      -webkit-text-stroke: 1px var(--accent); color: transparent;
+    }
+    .hero-stats { display: flex; gap: 3rem; }
+    .stat-item { display: flex; flex-direction: column; gap: 0.3rem; }
+    .stat-num {
+      font-family: var(--font-head); font-size: 2rem;
+      font-weight: 800; line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.62rem; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--muted);
+    }
+ 
+    .hero-right {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 4rem 3rem 5rem; position: relative; z-index: 1;
+    }
+    .hero-image-wrap {
+      position: relative; width: 180px; height: 180px; margin-bottom: 2.5rem;
+    }
+    .hero-image-wrap::before {
+      content: ''; position: absolute; inset: -1px; border-radius: 25px;
+      background: linear-gradient(135deg,rgba(255,255,255,0.14),transparent 60%);
+      pointer-events: none;
+    }
+    .hero-img {
+      width: 180px; height: 180px; border-radius: 24px;
+      border: 1px solid var(--border); display: block;
+      object-fit: cover; aspect-ratio: 1/1;
+      transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease);
+    }
+    .hero-img:hover {
+      transform: scale(1.06) rotate(-1.5deg);
+      box-shadow: 0 28px 64px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.1);
+    }
+    .img-badge {
+      position: absolute; top: -13px; right: -18px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 100px; padding: 5px 14px;
+      font-size: 0.62rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--accent); white-space: nowrap;
+    }
+    .hero-desc {
+      font-size: clamp(0.85rem,1.1vw,1rem); line-height: 1.82;
+      color: var(--muted); max-width: 380px;
+    }
+    .hero-desc strong { color: var(--text); font-weight: 600; }
+ 
+    .marquee-band {
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      background: var(--surface); overflow: hidden; padding: 1.15rem 0;
+    }
+    .marquee-track {
+      display: flex; white-space: nowrap;
+      animation: marquee 22s linear infinite; will-change: transform;
+    }
+    .marquee-item {
+      display: inline-flex; align-items: center; gap: 1.25rem;
+      padding: 0 2rem; font-size: 0.68rem;
+      letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted);
+    }
+    .marquee-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: var(--accent); flex-shrink: 0;
+    }
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+ 
+    .reasons-section {
+      padding: 9rem 3rem; max-width: 1200px; margin: 0 auto;
+    }
+    .section-header {
+      display: flex; align-items: flex-start; gap: 2.5rem; margin-bottom: 5rem;
+    }
+    .section-label {
+      font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--muted); writing-mode: vertical-rl;
+      transform: rotate(180deg); margin-top: 0.5rem; flex-shrink: 0;
+    }
+    .section-title {
+      font-family: var(--font-head);
+      font-size: clamp(2.5rem,5vw,4.5rem); font-weight: 800;
+      line-height: 1; letter-spacing: -0.03em;
+    }
+    .reasons-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border); border-radius: 20px; overflow: hidden;
+    }
+    .reason-card {
+      background: var(--bg); padding: 3.5rem;
+      position: relative; overflow: hidden; transition: background 0.35s;
+    }
+    .reason-card::after {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 0% 100%, rgba(255,255,255,0.04) 0%, transparent 60%);
+      opacity: 0; transition: opacity 0.4s var(--ease); pointer-events: none;
+    }
+    .reason-card:hover { background: #0d0d0d; }
+    .reason-card:hover::after { opacity: 1; }
+    .reason-num {
+      font-family: var(--font-head); font-size: 5.5rem; font-weight: 800;
+      color: rgba(255,255,255,0.05); line-height: 1;
+      margin-bottom: 1.5rem; transition: color 0.3s; user-select: none;
+    }
+    .reason-card:hover .reason-num { color: rgba(255,255,255,0.09); }
+    .reason-title {
+      font-family: var(--font-head); font-size: 1.45rem;
+      font-weight: 700; margin-bottom: 0.85rem;
+    }
+    .reason-body {
+      font-size: 0.83rem; color: var(--muted);
+      line-height: 1.8; max-width: 38ch;
+    }
+    .reason-arrow {
+      position: absolute; bottom: 2rem; right: 2rem;
+      width: 38px; height: 38px; border: 1px solid var(--border);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translate(6px,6px);
+      transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+    }
+    .reason-card:hover .reason-arrow { opacity: 1; transform: translate(0,0); }
+    .reason-arrow svg {
+      width: 13px; height: 13px; stroke: var(--accent);
+      fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+    }
+ 
+    .cta-section {
+      padding: 9rem 3rem;
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      border-top: 1px solid var(--border); position: relative;
+    }
+    .cta-section::before {
+      content: ''; position: absolute; top: 0; left: 50%;
+      transform: translateX(-50%); width: 1px; height: 72px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.15), transparent);
+    }
+    .cta-label {
+      font-size: 0.65rem; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 1.75rem;
+    }
+    .cta-title {
+      font-family: var(--font-head);
+      font-size: clamp(2.8rem,6vw,5.5rem); font-weight: 800;
+      letter-spacing: -0.03em; line-height: 1; margin-bottom: 1.5rem;
+    }
+    .cta-sub {
+      font-size: 0.88rem; color: var(--muted);
+      margin-bottom: 3.5rem; max-width: 36ch;
+    }
+    .btn-magnetic-wrap { display: inline-block; padding: 1.5rem; }
+    .btn-visit {
+      font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--bg); background: var(--text); border: none;
+      padding: 1.15rem 3.25rem; border-radius: 100px; cursor: none;
+      position: relative; overflow: hidden;
+      display: inline-flex; align-items: center; gap: 0.75rem;
+      transition: transform 0.45s var(--ease), box-shadow 0.45s var(--ease);
+      box-shadow: 0 0 0 rgba(255,255,255,0);
+    }
+    .btn-visit::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(105deg,transparent 35%,rgba(255,255,255,0.28) 50%,transparent 65%);
+      transform: translateX(-100%); transition: transform 0.5s var(--ease);
+    }
+    .btn-visit:hover { box-shadow: 0 8px 40px rgba(255,255,255,0.15); }
+    .btn-visit:hover::before { transform: translateX(100%); }
+    .btn-visit:active { transform: scale(0.97) !important; }
+    .btn-visit:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(255,255,255,0.3); }
+    .btn-visit svg {
+      width: 13px; height: 13px; stroke: currentColor;
+      fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0;
+    }
+ 
+    footer {
+      border-top: 1px solid var(--border); padding: 1.75rem 3rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .footer-copy { font-size: 0.62rem; letter-spacing: 0.1em; color: var(--muted); }
+    .footer-wordmark {
+      font-family: var(--font-head); font-size: 0.82rem;
+      font-weight: 800; letter-spacing: 0.12em;
+    }
+ 
+    .reveal {
+      opacity: 0; transform: translateY(28px);
+      transition: opacity 0.75s var(--ease), transform 0.75s var(--ease);
+      transition-delay: var(--reveal-delay, 0s);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+ 
+    @media (max-width: 768px) {
+      nav { padding: 1.2rem 1.5rem; }
+      .nav-links { display: none; }
+      .hero { grid-template-columns: 1fr; min-height: auto; }
+      .hero-left { border-right: none; border-bottom: 1px solid var(--border); padding: 6rem 1.5rem 3rem; }
+      .hero-right { padding: 3rem 1.5rem 4rem; }
+      .hero::before { font-size: 45vw; }
+      .reasons-grid { grid-template-columns: 1fr; }
+      .reasons-section { padding: 5rem 1.5rem; }
+      .cta-section { padding: 5rem 1.5rem; }
+      footer { flex-direction: column; gap: 1rem; text-align: center; padding: 1.5rem; }
+    }
+    @media (max-width: 480px) {
+      .hero-h1 { font-size: 3rem; }
+      .hero-stats { gap: 2rem; }
+      .reason-card { padding: 2.5rem 2rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .marquee-track { animation: none; }
+      *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+    }
+  </style>
+</head>
+<body>
+ 
+  <div class="noise-overlay" aria-hidden="true"></div>
+  <div class="cursor-dot"  id="cursorDot"  aria-hidden="true"></div>
+  <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
+ 
+  <nav>
+    <span class="nav-logo">RBLX</span>
+    <ul class="nav-links">
+      <li><a href="#reasons">Why</a></li>
+      <li><a href="#cta">Visit</a></li>
+    </ul>
+  </nav>
+ 
+  <main>
+ 
+    <section class="hero" aria-label="Hero — I love Roblox">
+      <div class="hero-left">
+        <p class="hero-eyebrow">Personal fan site · Est. 2024</p>
+        <h1 class="hero-h1">I<br>Love<br><em>Roblox</em></h1>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-num">88M+</span>
+            <span class="stat-label">Daily Players</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num">40M+</span>
+            <span class="stat-label">Experiences</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num">#1</span>
+            <span class="stat-label">Kids Platform</span>
+          </div>
+        </div>
+      </div>
+ 
+      <div class="hero-right">
+        <div class="hero-image-wrap">
+          <img
+            class="hero-img"
+            src="https://archive.org/download/app-icon-roblox/app-icon-roblox.png"
+            alt="Roblox app icon"
+            width="180" height="180"
+            loading="eager">
+          <span class="img-badge">Platform · Gaming</span>
+        </div>
+        <p class="hero-desc">
+          Roblox is more than a game — it's a
+          <strong>universe of infinite creation</strong>.
+          Millions of worlds, one imagination. A community
+          that builds, plays, and grows together.
+        </p>
+      </div>
+    </section>
+ 
+    <div class="marquee-band" aria-hidden="true">
+      <div class="marquee-track">
+        <span class="marquee-item"><span class="marquee-dot"></span>Platform</span>
+        <span class="marquee-item"><span class="marquee-dot"></span>Community</span>
+        <span class="marquee-item"><span class="marquee-dot"></span>Creativity</span>
+        <span class="marquee-item"><span class="marquee-dot"></span>Games</span>
+        <span class="marquee-item"><span class="marquee-dot"></span>Worlds</span>
+        <span class="marquee-item"><span class="marquee-dot"></span>Innovation</span>
+        <span class="marquee-item"><span class="marquee-dot"></span>Exploration</span>
+        <span class="marquee-item"><span class="marquee-dot"></span>Platform</span>
+        <span class="marquee-item"><span class="marquee-dot"></span>Community</span>
+        <span class="marquee-item"><span class="marquee-dot"></span>Creativity</span>
+        <span class="marquee-item"><span class="marquee-dot"></span>Games</span>
+        <span class="marquee-item"><span class="marquee-dot"></span>Worlds</span>
+        <span class="marquee-item"><span class="marquee-dot"></span>Innovation</span>
+        <span class="marquee-item"><span class="marquee-dot"></span>Exploration</span>
+      </div>
+    </div>
+ 
+    <section class="reasons-section" id="reasons" aria-label="Reasons to love Roblox">
+      <div class="section-header reveal">
+        <span class="section-label" aria-hidden="true">Reasons</span>
+        <h2 class="section-title">Why<br>Roblox?</h2>
+      </div>
+      <div class="reasons-grid">
+        <article class="reason-card reveal" style="--reveal-delay: 0.05s">
+          <div class="reason-num" aria-hidden="true">01</div>
+          <h3 class="reason-title">A Great Platform</h3>
+          <p class="reason-body">
+            Roblox delivers a seamless engine for creativity and play — powering
+            millions of developer-built experiences across every genre imaginable,
+            all within a single, frictionless ecosystem.
+          </p>
+          <div class="reason-arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+          </div>
+        </article>
+        <article class="reason-card reveal" style="--reveal-delay: 0.15s">
+          <div class="reason-num" aria-hidden="true">02</div>
+          <h3 class="reason-title">A Great Community</h3>
+          <p class="reason-body">
+            From solo hobbyists to large studios — Roblox hosts a vibrant, global
+            community of developers, designers, and players who share, collaborate,
+            and inspire each other every single day.
+          </p>
+          <div class="reason-arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+          </div>
+        </article>
+      </div>
+    </section>
+ 
+    <section class="cta-section reveal" id="cta" aria-label="Visit Roblox">
+      <p class="cta-label">Ready to explore?</p>
+      <h2 class="cta-title">Enter the<br>Universe</h2>
+      <p class="cta-sub">Over 40 million experiences await. What will you build?</p>
+      <div class="btn-magnetic-wrap" id="magneticWrap">
+        <button
+          class="btn-visit"
+          onclick="window.open('https://roblox.com','_blank')"
+          aria-label="Visit Roblox — opens in a new tab">
+          Visit Roblox
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+    </section>
+ 
+  </main>
+ 
+  <footer>
+    <p class="footer-copy">Personal fan site · Not affiliated with Roblox Corporation</p>
+    <span class="footer-wordmark">RBLX</span>
+  </footer>
+ 
+  <script>
+    // ── Custom cursor: dot snaps instantly, ring lerps behind
+    const dot  = document.getElementById('cursorDot');
+    const ring = document.getElementById('cursorRing');
+    let dotX = 0, dotY = 0, ringX = 0, ringY = 0;
+    const LERP = 0.11;
+ 
+    document.addEventListener('mousemove', (e) => {
+      dotX = e.clientX; dotY = e.clientY;
+      dot.style.left = dotX + 'px';
+      dot.style.top  = dotY + 'px';
+    });
+    (function animateCursor() {
+      ringX += (dotX - ringX) * LERP;
+      ringY += (dotY - ringY) * LERP;
+      ring.style.left = ringX + 'px';
+      ring.style.top  = ringY + 'px';
+      requestAnimationFrame(animateCursor);
+    })();
+    document.addEventListener('mouseleave', () => { dot.style.opacity = '0'; ring.style.opacity = '0'; });
+    document.addEventListener('mouseenter', () => { dot.style.opacity = '1'; ring.style.opacity = '1'; });
+ 
+    // ── IntersectionObserver scroll reveals
+    const revealObs = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+ 
+    // ── Magnetic button: translate toward cursor, spring back on leave
+    const wrap = document.getElementById('magneticWrap');
+    const btn  = wrap?.querySelector('.btn-visit');
+    if (wrap && btn) {
+      wrap.addEventListener('mousemove', (e) => {
+        const r  = wrap.getBoundingClientRect();
+        const dx = (e.clientX - (r.left + r.width  / 2)) * 0.32;
+        const dy = (e.clientY - (r.top  + r.height / 2)) * 0.32;
+        btn.style.transform = `translate(${dx}px, ${dy}px)`;
+      });
+      wrap.addEventListener('mouseleave', () => { btn.style.transform = ''; });
+    }
+  </script>
+</body>
 </html>
+ 
