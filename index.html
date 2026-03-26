@@ -16,10 +16,14 @@
       --border:    rgba(255,255,255,0.08);
       --accent:    #c8c8c8;
       --text:      #f0f0f0;
-      --muted:     rgba(240,240,240,0.42);
+      /* Increased contrast for WCAG AA */
+      --muted:     rgba(240,240,240,0.65);
       --font-head: 'Syne', sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
       --ease:      cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-hover: cubic-bezier(0.4, 0.0, 0.2, 1);
+      --ease-enter: cubic-bezier(0.0, 0.0, 0.2, 1);
+      --ease-exit:  cubic-bezier(0.4, 0.0, 1, 1);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -54,17 +58,23 @@
       position: fixed; width: 6px; height: 6px;
       background: var(--text); border-radius: 50%;
       pointer-events: none; z-index: 10000;
-      transform: translate(-50%,-50%); transition: opacity 0.2s;
+      top: 0; left: 0;
+      /* CSS translate independent of JS transform */
+      translate: -50% -50%;
+      transition: opacity 200ms var(--ease-hover);
     }
     .cursor-ring {
       position: fixed; width: 36px; height: 36px;
       border: 1px solid rgba(255,255,255,0.35); border-radius: 50%;
       pointer-events: none; z-index: 9998;
-      transform: translate(-50%,-50%);
-      transition: width 0.3s var(--ease), height 0.3s var(--ease), border-color 0.3s;
+      top: 0; left: 0;
+      translate: -50% -50%;
+      scale: 1;
+      /* Only animate scale and border-color, not width/height */
+      transition: scale 200ms var(--ease-hover), border-color 200ms var(--ease-hover);
     }
     body:has(a:hover, button:hover) .cursor-ring {
-      width: 56px; height: 56px; border-color: rgba(255,255,255,0.55);
+      scale: 1.555; border-color: rgba(255,255,255,0.55);
     }
 
     /* ── Nav ── */
@@ -84,22 +94,26 @@
     .nav-links { display: flex; gap: 2.5rem; list-style: none; }
     .nav-links a {
       font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
-      color: var(--muted); text-decoration: none; transition: color 0.2s;
+      color: var(--muted); text-decoration: none; 
+      /* min 44x44 target */
+      padding: 0.5rem; margin: -0.5rem; display: inline-block;
+      transition: color 200ms var(--ease-hover), opacity 200ms var(--ease-hover), transform 200ms var(--ease-hover);
     }
     .nav-links a:hover, .nav-links a:focus-visible { color: var(--text); outline: none; }
+    .nav-links a:active { opacity: 0.7; transform: scale(0.96); }
 
     /* ── Hero ── */
     .hero {
-      min-height: 100vh;
+      min-height: 100dvh;
       display: grid; grid-template-columns: 55% 45%;
-      padding-top: 72px; position: relative; overflow: hidden;
+      padding-top: 4.5rem; position: relative; overflow: hidden;
     }
 
     /* Ghost RBLX watermark — deepest layer */
     .hero::before {
       content: 'RBLX'; position: absolute;
       font-family: var(--font-head);
-      font-size: clamp(180px,32vw,480px); font-weight: 800;
+      font-size: clamp(11.25rem, 32vw, 30rem); font-weight: 800;
       color: transparent;
       -webkit-text-stroke: 1px rgba(255,255,255,0.018);
       letter-spacing: -0.04em;
@@ -124,10 +138,11 @@
       padding: 4rem 3rem 5rem;
       border-right: 1px solid var(--border);
       position: relative; z-index: 2;
+      gap: 1.75rem; /* Replaced margin-bottom with gap */
     }
     .hero-eyebrow {
       font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase;
-      color: var(--muted); margin-bottom: 1.75rem;
+      color: var(--muted);
       display: flex; align-items: center; gap: 0.75rem;
     }
     .hero-eyebrow::before {
@@ -138,14 +153,14 @@
       font-family: var(--font-head);
       font-size: clamp(3.5rem,7.5vw,7.5rem); font-weight: 800;
       line-height: 0.93; letter-spacing: -0.03em;
-      text-transform: uppercase; margin-bottom: 3.5rem;
+      text-transform: uppercase; margin-bottom: 1.75rem; /* Gap applied, adjusting margin */
     }
     .hero-h1 em {
       font-style: normal;
       -webkit-text-stroke: 1px var(--accent); color: transparent;
     }
     .hero-stats { display: flex; gap: 3rem; }
-    .stat-item { display: flex; flex-direction: column; gap: 0.3rem; }
+    .stat-item { display: flex; flex-direction: column; gap: 0.375rem; }
     .stat-num {
       font-family: var(--font-head); font-size: 2rem; font-weight: 800; line-height: 1;
     }
@@ -157,9 +172,10 @@
     .hero-right {
       display: flex; flex-direction: column; justify-content: center;
       padding: 4rem 3rem 5rem; position: relative; z-index: 2;
+      gap: 2.5rem; /* Replaced margin-bottom with gap */
     }
     .hero-image-wrap {
-      position: relative; width: 180px; height: 180px; margin-bottom: 2.5rem;
+      position: relative; width: 11.25rem; height: 11.25rem; 
     }
     .hero-image-wrap::before {
       content: ''; position: absolute; inset: -1px; border-radius: 25px;
@@ -167,19 +183,22 @@
       pointer-events: none;
     }
     .hero-img {
-      width: 180px; height: 180px; border-radius: 24px;
+      width: 11.25rem; height: 11.25rem; border-radius: 24px;
       border: 1px solid var(--border); display: block;
       object-fit: cover; aspect-ratio: 1/1;
-      transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease);
+      transition: transform 200ms var(--ease-hover), box-shadow 200ms var(--ease-hover);
     }
     .hero-img:hover {
       transform: scale(1.06) rotate(-1.5deg);
       box-shadow: 0 28px 64px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.1);
     }
+    .hero-img:focus-visible {
+      outline: none; box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+    }
     .img-badge {
       position: absolute; top: -13px; right: -18px;
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 100px; padding: 5px 14px;
+      border-radius: 100px; padding: 0.3125rem 0.875rem;
       font-size: 0.62rem; letter-spacing: 0.1em;
       text-transform: uppercase; color: var(--accent); white-space: nowrap;
     }
@@ -234,19 +253,19 @@
     }
     .reason-card {
       background: var(--bg); padding: 3.5rem;
-      position: relative; overflow: hidden; transition: background 0.35s;
+      position: relative; overflow: hidden; transition: background 200ms var(--ease-hover);
     }
     .reason-card::after {
       content: ''; position: absolute; inset: 0;
       background: radial-gradient(circle at 0% 100%, rgba(255,255,255,0.04) 0%, transparent 60%);
-      opacity: 0; transition: opacity 0.4s var(--ease); pointer-events: none;
+      opacity: 0; transition: opacity 300ms var(--ease-enter); pointer-events: none;
     }
-    .reason-card:hover { background: #0d0d0d; }
+    .reason-card:hover { background: rgba(255,255,255,0.03); }
     .reason-card:hover::after { opacity: 1; }
     .reason-num {
       font-family: var(--font-head); font-size: 5.5rem; font-weight: 800;
       color: rgba(255,255,255,0.05); line-height: 1;
-      margin-bottom: 1.5rem; transition: color 0.3s; user-select: none;
+      margin-bottom: 1.5rem; transition: color 200ms var(--ease-hover); user-select: none;
     }
     .reason-card:hover .reason-num { color: rgba(255,255,255,0.09); }
     .reason-title {
@@ -261,7 +280,7 @@
       width: 38px; height: 38px; border: 1px solid var(--border);
       border-radius: 50%; display: flex; align-items: center; justify-content: center;
       opacity: 0; transform: translate(6px,6px);
-      transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+      transition: opacity 200ms var(--ease-hover), transform 200ms var(--ease-hover);
     }
     .reason-card:hover .reason-arrow { opacity: 1; transform: translate(0,0); }
     .reason-arrow svg {
@@ -274,6 +293,7 @@
       padding: 9rem 3rem;
       display: flex; flex-direction: column; align-items: center; text-align: center;
       border-top: 1px solid var(--border); position: relative;
+      gap: 1.75rem;
     }
     .cta-section::before {
       content: ''; position: absolute; top: 0; left: 50%;
@@ -282,14 +302,14 @@
     }
     .cta-label {
       font-size: 0.65rem; letter-spacing: 0.22em;
-      text-transform: uppercase; color: var(--muted); margin-bottom: 1.75rem;
+      text-transform: uppercase; color: var(--muted);
     }
     .cta-title {
       font-family: var(--font-head);
       font-size: clamp(2.8rem,6vw,5.5rem); font-weight: 800;
-      letter-spacing: -0.03em; line-height: 1; margin-bottom: 1.5rem;
+      letter-spacing: -0.03em; line-height: 1; margin-bottom: -0.25rem; /* Rebalance gap matching */
     }
-    .cta-sub { font-size: 0.88rem; color: var(--muted); margin-bottom: 3.5rem; max-width: 36ch; }
+    .cta-sub { font-size: 0.88rem; color: var(--muted); margin-bottom: 1.75rem; max-width: 36ch; }
     .btn-magnetic-wrap { display: inline-block; padding: 1.5rem; }
     .btn-visit {
       font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600;
@@ -298,16 +318,16 @@
       padding: 1.15rem 3.25rem; border-radius: 100px; cursor: none;
       position: relative; overflow: hidden;
       display: inline-flex; align-items: center; gap: 0.75rem;
-      transition: transform 0.45s var(--ease), box-shadow 0.45s var(--ease);
+      transition: transform 150ms var(--ease-hover), box-shadow 150ms var(--ease-hover);
     }
     .btn-visit::before {
       content: ''; position: absolute; inset: 0;
       background: linear-gradient(105deg,transparent 35%,rgba(255,255,255,0.28) 50%,transparent 65%);
-      transform: translateX(-100%); transition: transform 0.5s var(--ease);
+      transform: translateX(-100%); transition: transform 300ms var(--ease-enter);
     }
     .btn-visit:hover { box-shadow: 0 8px 40px rgba(255,255,255,0.15); }
     .btn-visit:hover::before { transform: translateX(100%); }
-    .btn-visit:active { transform: scale(0.97) !important; }
+    .btn-visit:active { transform: scale(0.97); } /* removed !important */
     .btn-visit:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(255,255,255,0.3); }
     .btn-visit svg {
       width: 13px; height: 13px; stroke: currentColor;
@@ -325,7 +345,7 @@
     /* ── Scroll reveal ── */
     .reveal {
       opacity: 0; transform: translateY(28px);
-      transition: opacity 0.75s var(--ease), transform 0.75s var(--ease);
+      transition: opacity 300ms var(--ease-enter), transform 300ms var(--ease-enter);
       transition-delay: var(--reveal-delay, 0s);
     }
     .reveal.visible { opacity: 1; transform: translateY(0); }
@@ -649,14 +669,12 @@
 
     document.addEventListener('mousemove', (e) => {
       dotX = e.clientX; dotY = e.clientY;
-      dot.style.left = dotX + 'px';
-      dot.style.top  = dotY + 'px';
+      dot.style.transform = `translate(${dotX}px, ${dotY}px)`;
     });
     (function animateCursor() {
       ringX += (dotX - ringX) * LERP;
       ringY += (dotY - ringY) * LERP;
-      ring.style.left = ringX + 'px';
-      ring.style.top  = ringY + 'px';
+      ring.style.transform = `translate(${ringX}px, ${ringY}px)`;
       requestAnimationFrame(animateCursor);
     })();
     document.addEventListener('mouseleave', () => { dot.style.opacity='0'; ring.style.opacity='0'; });
